@@ -41,13 +41,14 @@ public class MySQLService {
         	DriverManager.registerDriver(new com.mysql.jdbc.Driver ());
             con = DriverManager.getConnection(URL, usr, pwd);
 
-            pst = con.prepareStatement("INSERT INTO TankEvent(id,level,flow,state,pumpState,valveState) VALUES(?,?,?,?,?,?)");
+            pst = con.prepareStatement("INSERT INTO TankEvent(id,level,flow,state,pumpState,valveState,switchState) VALUES(?,?,?,?,?,?,?)");
             pst.setString(1, dao.getId());
             pst.setFloat(2, dao.getLevel());
             pst.setFloat(3, dao.getFlow());
             pst.setString(4, dao.getState());
             pst.setString(5, dao.getPumpState());
             pst.setString(6, dao.getValveState());
+            pst.setString(7, dao.getSwitchState());
             pst.executeUpdate();
 
         } catch (SQLException ex) {
@@ -72,7 +73,7 @@ public class MySQLService {
         	DriverManager.registerDriver(new com.mysql.jdbc.Driver ());
             con = DriverManager.getConnection(URL, usr, pwd);
 
-            pst = con.prepareStatement("SELECT ts,id,level,flow,state,pumpState,valveState FROM TankEvent");
+            pst = con.prepareStatement("SELECT ts,id,level,flow,state,pumpState,valveState,switchState FROM TankEvent");
             ResultSet rs = pst.executeQuery();
             ArrayList<TankDAO> list = makeList(rs);            
 
@@ -101,7 +102,7 @@ public class MySQLService {
         	DriverManager.registerDriver(new com.mysql.jdbc.Driver ());
             con = DriverManager.getConnection(URL, usr, pwd);
 
-            pst = con.prepareStatement("SELECT ts,id,level,flow,state,pumpState,valveState FROM TankEvent "+
+            pst = con.prepareStatement("SELECT ts,id,level,flow,state,pumpState,valveState,switchState FROM TankEvent "+
             						   "ORDER BY ts DESC LIMIT 5");
             ResultSet rs = pst.executeQuery();
             ArrayList<TankDAO> list = makeList(rs);            
@@ -130,13 +131,15 @@ public class MySQLService {
         	DriverManager.registerDriver(new com.mysql.jdbc.Driver ());
             con = DriverManager.getConnection(URL, usr, pwd);
 
-            pst = con.prepareStatement("SELECT ts,level FROM TankEvent ORDER BY ts DESC LIMIT 400");
+            pst = con.prepareStatement("SELECT DATE_FORMAT(ts,'%Y-%m-%d %H:%i:00') as ds, AVG(level) as avg_level "+
+            						   "FROM TankEvent WHERE ts > DATE_SUB(NOW(),INTERVAL 24 HOUR) "+
+            						   "GROUP BY ds ORDER BY ds DESC");
             ResultSet rs = pst.executeQuery();
             ArrayList<GraphDAO> list = new ArrayList<GraphDAO>();
             while (rs.next()) {
             	GraphDAO dao = new GraphDAO();
-            	float value = (rs.getFloat("level"))/100;
-                dao.setDate(rs.getTimestamp("ts"));
+            	float value = (rs.getFloat("avg_level"))/100;
+                dao.setDate(rs.getTimestamp("ds"));
                 dao.setValue(value);
                 list.add(dao);
             }            
@@ -165,13 +168,15 @@ public class MySQLService {
         	DriverManager.registerDriver(new com.mysql.jdbc.Driver ());
             con = DriverManager.getConnection(URL, usr, pwd);
 
-            pst = con.prepareStatement("SELECT ts,flow FROM TankEvent ORDER BY ts DESC LIMIT 400");
+            pst = con.prepareStatement("SELECT DATE_FORMAT(ts,'%Y-%m-%d %H:%i:00') as ds, AVG(flow) as avg_flow "+
+					   "FROM TankEvent WHERE ts > DATE_SUB(NOW(),INTERVAL 24 HOUR) "+
+					   "GROUP BY ds ORDER BY ds DESC");
             ResultSet rs = pst.executeQuery();
             ArrayList<GraphDAO> list = new ArrayList<GraphDAO>();
             while (rs.next()) {
             	GraphDAO dao = new GraphDAO();
-            	float value = rs.getFloat("flow");
-                dao.setDate(rs.getTimestamp("ts"));
+            	float value = rs.getFloat("avg_flow");
+                dao.setDate(rs.getTimestamp("ds"));
                 dao.setValue(value);
                 list.add(dao);
             }            
@@ -204,6 +209,7 @@ public class MySQLService {
             dao.setState(rs.getString("state"));
             dao.setPumpState(rs.getString("pumpState"));
             dao.setValveState(rs.getString("valveState"));
+            dao.setSwitchState(rs.getString("switchState"));
             list.add(dao);
         }
         return list;

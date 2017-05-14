@@ -6,5 +6,10 @@ create table TankEvent (
 	flow float,
 	state varchar(10),
 	pumpState varchar(10),
-	valveState varchar(10)
-)
+	valveState varchar(10),
+	switchState varchar(10)
+);
+
+-- alter table TankEvent add switchState varchar(10);
+-- update TankEvent set switchState = 'OPEN';
+-- alter table TankEvent add primary key (ts,id);

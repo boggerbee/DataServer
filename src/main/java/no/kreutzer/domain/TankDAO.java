@@ -16,8 +16,15 @@ public class TankDAO {
 	String state;
     String valveState;
     String pumpState;
+    String switchState;
     
-    public Timestamp getTimestamp() {
+    public String getSwitchState() {
+		return switchState;
+	}
+	public void setSwitchState(String ss) {
+		this.switchState = ss;
+	}
+	public Timestamp getTimestamp() {
 		return ts;
 	}
 	public void setTimestamp(Timestamp dt) {
