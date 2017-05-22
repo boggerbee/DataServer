@@ -3,6 +3,7 @@ package no.kreutzer.rest;
 import no.kreutzer.db.MySQLService;
 import no.kreutzer.domain.GraphDAO;
 import no.kreutzer.domain.TankDAO;
+import no.kreutzer.utils.WebsocketServer;
 import restx.annotations.GET;
 import restx.annotations.POST;
 import restx.annotations.RestxResource;
@@ -18,14 +19,17 @@ import org.slf4j.LoggerFactory;
 public class TankResource {
 	static final Logger log = LoggerFactory.getLogger(TankResource.class);
 	private MySQLService mysql;
+	private WebsocketServer server;
 	
-	public TankResource(@Named("MySQLService") MySQLService m) {
+	public TankResource(@Named("MySQLService") MySQLService m, @Named("WebsocketServer") WebsocketServer s) {
 		mysql = m;
+		server = s;
 	}
 
     @GET("/current")
     @PermitAll
     public TankDAO getCurrent() {
+    	server.ping();
         return mysql.getCurrent();
     }
 
@@ -34,7 +38,15 @@ public class TankResource {
     public TankDAO postTank(TankDAO dao){
     	log.info(dao.toString());
     	
-    	mysql.Store(dao);
+    	mysql.storeTank(dao);
+        return dao;
+    }
+    @POST("/controller")
+    @PermitAll
+    public ControllerDAO postController(ControllerDAO dao){
+    	log.info(dao.toString());
+    	
+    	mysql.storeController(dao);
         return dao;
     }
     @GET("/events")

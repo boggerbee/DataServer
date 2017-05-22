@@ -6,6 +6,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.TimeZone;
 
 import javax.inject.Named;
 
@@ -14,11 +17,8 @@ import org.slf4j.LoggerFactory;
 
 import no.kreutzer.domain.GraphDAO;
 import no.kreutzer.domain.TankDAO;
-import restx.config.ConfigLoader;
-import restx.config.ConfigSupplier;
+import no.kreutzer.rest.ControllerDAO;
 import restx.factory.Component;
-import restx.factory.Module;
-import restx.factory.Provides;
 
 @Component
 public class MySQLService {
@@ -27,6 +27,8 @@ public class MySQLService {
     static String URL = "jdbc:mysql://localhost:3306/watercontrol?useSSL=false";
     private String usr;
     private String pwd;
+    private Calendar cal = Calendar.getInstance();
+    private int offsetFromUTC = 7200000; //BUG some problem with timezones..
     
     public MySQLService(@Named("db.usr") String dbUsr, @Named("db.pwd") String dbPwd) {
     	log.info("Usr="+dbUsr);
@@ -34,7 +36,7 @@ public class MySQLService {
     	pwd = dbPwd;
     }
 
-	public void Store(TankDAO dao) {
+	public void storeTank(TankDAO dao) {
         Connection con = null;
         PreparedStatement pst = null;
         try {
@@ -139,7 +141,9 @@ public class MySQLService {
             while (rs.next()) {
             	GraphDAO dao = new GraphDAO();
             	float value = (rs.getFloat("avg_level"))/100;
-                dao.setDate(rs.getTimestamp("ds"));
+                cal.setTime(rs.getTimestamp("ds"));
+                cal.add(Calendar.MILLISECOND, offsetFromUTC);
+                dao.setDate(cal.getTime());
                 dao.setValue(value);
                 list.add(dao);
             }            
@@ -176,7 +180,9 @@ public class MySQLService {
             while (rs.next()) {
             	GraphDAO dao = new GraphDAO();
             	float value = rs.getFloat("avg_flow");
-                dao.setDate(rs.getTimestamp("ds"));
+                cal.setTime(rs.getTimestamp("ds"));
+                cal.add(Calendar.MILLISECOND, offsetFromUTC);
+                dao.setDate(cal.getTime());
                 dao.setValue(value);
                 list.add(dao);
             }            
@@ -200,9 +206,12 @@ public class MySQLService {
 	
 	private ArrayList<TankDAO> makeList(ResultSet rs) throws SQLException {
         ArrayList<TankDAO> list = new ArrayList<TankDAO>();
+        
         while (rs.next()) {
             TankDAO dao = new TankDAO();
-            dao.setTimestamp(rs.getTimestamp("ts"));
+            cal.setTime(rs.getTimestamp("ts"));
+            cal.add(Calendar.MILLISECOND, offsetFromUTC);
+            dao.setDate(cal.getTime());
             dao.setId(rs.getString("id"));
             dao.setLevel(rs.getFloat("level"));
             dao.setFlow(rs.getFloat("flow"));
@@ -212,7 +221,60 @@ public class MySQLService {
             dao.setSwitchState(rs.getString("switchState"));
             list.add(dao);
         }
+     
         return list;
 	}
+	
+	public static Calendar convertToGmt(Calendar cal) {
+
+	    Date date = cal.getTime();
+	    TimeZone tz = cal.getTimeZone();
+
+	    //log.debug("input calendar has date [" + date + "]");
+
+	    //Returns the number of milliseconds since January 1, 1970, 00:00:00 GMT 
+	    long msFromEpochGmt = date.getTime();
+
+	    //gives you the current offset in ms from GMT at the current date
+	    int offsetFromUTC = tz.getOffset(msFromEpochGmt);
+	    //log.debug("offset is " + offsetFromUTC);
+
+	    //create a new calendar in GMT timezone, set to this date and add the offset
+	    Calendar gmtCal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
+	    gmtCal.setTime(date);
+	    gmtCal.add(Calendar.MILLISECOND, offsetFromUTC);
+
+	    //log.debug("Created GMT cal with date [" + gmtCal.getTime() + "]");
+
+	    return gmtCal;
+	}
+
+	public void storeController(ControllerDAO dao) {
+        Connection con = null;
+        PreparedStatement pst = null;
+        try {
+        	DriverManager.registerDriver(new com.mysql.jdbc.Driver ());
+            con = DriverManager.getConnection(URL, usr, pwd);
+
+            pst = con.prepareStatement("INSERT INTO ControllerEvent(id,_key,_value) VALUES(?,?,?)");
+            pst.setString(1, dao.getId());
+            pst.setString(2, dao.getKey());
+            pst.setString(3, dao.getValue());
+            pst.executeUpdate();
+
+        } catch (SQLException ex) {
+            log.error(ex.getMessage(), ex);
+        } finally {
+            try {
+                if (pst != null) {
+                    pst.close();
+                }
+                if (con != null) {
+                    con.close();
+                }
+            } catch (SQLException ex) {
+                log.error(ex.getMessage(), ex);
+            }
+        }	}
 
 }

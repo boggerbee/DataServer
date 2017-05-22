@@ -1,6 +1,7 @@
 package no.kreutzer.domain;
 
-import java.sql.Timestamp;
+import java.util.Date;
+
 import javax.validation.constraints.NotNull;
 
 import org.slf4j.Logger;
@@ -8,7 +9,7 @@ import org.slf4j.LoggerFactory;
 
 public class TankDAO {
 	static final Logger log = LoggerFactory.getLogger(TankDAO.class);
-    Timestamp ts;
+    Date ts;
 	@NotNull
     String id;
 	float level;
@@ -24,10 +25,10 @@ public class TankDAO {
 	public void setSwitchState(String ss) {
 		this.switchState = ss;
 	}
-	public Timestamp getTimestamp() {
+	public Date getDate() {
 		return ts;
 	}
-	public void setTimestamp(Timestamp dt) {
+	public void setDate(Date dt) {
 		this.ts = dt;
 	}
 	public float getFlow() {

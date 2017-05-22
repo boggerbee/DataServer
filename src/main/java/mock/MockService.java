@@ -1,8 +1,8 @@
 package mock;
 
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 
 import no.kreutzer.domain.TankDAO;
 
@@ -17,7 +17,7 @@ public class MockService {
 		
 		for (int i=0;i<1000;i++) {
 			TankDAO dao = new TankDAO();
-			dao.setTimestamp(new Timestamp(cal.getTimeInMillis()));
+			dao.setDate(new Date(cal.getTimeInMillis()));
 			dao.setLevel(getLevel(cal));
 			list.add(dao);
 			cal.add(Calendar.MINUTE, 1);

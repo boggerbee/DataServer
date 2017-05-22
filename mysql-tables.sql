@@ -9,7 +9,15 @@ create table TankEvent (
 	valveState varchar(10),
 	switchState varchar(10)
 );
+alter table TankEvent add primary key (ts,id);
 
 -- alter table TankEvent add switchState varchar(10);
 -- update TankEvent set switchState = 'OPEN';
--- alter table TankEvent add primary key (ts,id);
+drop table ControllerEvent;
+create table ControllerEvent (
+	ts timestamp default CURRENT_TIMESTAMP,
+	id varchar(20),
+	_key varchar(10),
+	_value varchar(10)
+);
+alter table ControllerEvent add primary key (ts,id);
