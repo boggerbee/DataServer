@@ -13,6 +13,20 @@ public class ControllerDAO {
 	@NotNull
     String id;
 	String key;
+	String mode;
+	long flow;
+	public String getMode() {
+		return mode;
+	}
+	public void setMode(String mode) {
+		this.mode = mode;
+	}
+	public long getFlow() {
+		return flow;
+	}
+	public void setFlow(long flow) {
+		this.flow = flow;
+	}
 	String value;
 	public Date getDate() {
 		return ts;

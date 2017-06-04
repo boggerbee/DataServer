@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import no.kreutzer.domain.GraphDAO;
+import no.kreutzer.domain.MarkerDAO;
 import no.kreutzer.domain.TankDAO;
 import no.kreutzer.rest.ControllerDAO;
 import restx.factory.Component;
@@ -126,16 +127,18 @@ public class MySQLService {
         return null;
 	}	
 	
-	public ArrayList<GraphDAO> getGraphableLevel() {
+	public ArrayList<GraphDAO> getGraphableLevel(int hrs) {
         Connection con = null;
         PreparedStatement pst = null;
+        if (hrs == 0) hrs = 24;
+        
         try {
         	DriverManager.registerDriver(new com.mysql.jdbc.Driver ());
             con = DriverManager.getConnection(URL, usr, pwd);
 
-            pst = con.prepareStatement("SELECT DATE_FORMAT(ts,'%Y-%m-%d %H:%i:00') as ds, AVG(level) as avg_level "+
-            						   "FROM TankEvent WHERE ts > DATE_SUB(NOW(),INTERVAL 24 HOUR) "+
-            						   "GROUP BY ds ORDER BY ds DESC");
+            pst = con.prepareStatement("SELECT DATE_FORMAT(MIN(ts),'%Y-%m-%d %H:%i:00') AS ds,AVG(level) AS avg_level "+
+				"FROM TankEvent WHERE ts > DATE_SUB(NOW(),INTERVAL "+hrs+" HOUR) "+
+				"GROUP BY ROUND(UNIX_TIMESTAMP(ts) / 600)"); // 600 is every 10th minute
             ResultSet rs = pst.executeQuery();
             ArrayList<GraphDAO> list = new ArrayList<GraphDAO>();
             while (rs.next()) {
@@ -165,16 +168,17 @@ public class MySQLService {
         return null;		
 	}
 	
-	public ArrayList<GraphDAO> getGraphableFlow() {
+	public ArrayList<GraphDAO> getGraphableFlow(int hrs) {
         Connection con = null;
         PreparedStatement pst = null;
         try {
         	DriverManager.registerDriver(new com.mysql.jdbc.Driver ());
             con = DriverManager.getConnection(URL, usr, pwd);
 
-            pst = con.prepareStatement("SELECT DATE_FORMAT(ts,'%Y-%m-%d %H:%i:00') as ds, AVG(flow) as avg_flow "+
-					   "FROM TankEvent WHERE ts > DATE_SUB(NOW(),INTERVAL 24 HOUR) "+
-					   "GROUP BY ds ORDER BY ds DESC");
+            pst = con.prepareStatement("SELECT DATE_FORMAT(MIN(ts),'%Y-%m-%d %H:%i:00') AS ds,AVG(flow) AS avg_flow "+
+				"FROM TankEvent WHERE ts > DATE_SUB(NOW(),INTERVAL "+hrs+" HOUR) "+
+				"GROUP BY ROUND(UNIX_TIMESTAMP(ts) / 600)"); // 600 is every 10th minute
+            
             ResultSet rs = pst.executeQuery();
             ArrayList<GraphDAO> list = new ArrayList<GraphDAO>();
             while (rs.next()) {
@@ -256,10 +260,12 @@ public class MySQLService {
         	DriverManager.registerDriver(new com.mysql.jdbc.Driver ());
             con = DriverManager.getConnection(URL, usr, pwd);
 
-            pst = con.prepareStatement("INSERT INTO ControllerEvent(id,_key,_value) VALUES(?,?,?)");
+            pst = con.prepareStatement("INSERT INTO ControllerEvent(id,mode,flow,_key,_value) VALUES(?,?,?,?,?)");
             pst.setString(1, dao.getId());
-            pst.setString(2, dao.getKey());
-            pst.setString(3, dao.getValue());
+            pst.setString(2, dao.getMode());
+            pst.setLong(3, dao.getFlow());
+            pst.setString(4, dao.getKey());
+            pst.setString(5, dao.getValue());
             pst.executeUpdate();
 
         } catch (SQLException ex) {
@@ -276,5 +282,41 @@ public class MySQLService {
                 log.error(ex.getMessage(), ex);
             }
         }	}
+
+	public Iterable<MarkerDAO> getFillMarkers() {
+        Connection con = null;
+        PreparedStatement pst = null;
+        try {
+        	DriverManager.registerDriver(new com.mysql.jdbc.Driver ());
+            con = DriverManager.getConnection(URL, usr, pwd);
+
+            pst = con.prepareStatement("select ts,_value from ControllerEvent where _key='tank' and ts>DATE_SUB(NOW(),INTERVAL 24 HOUR)");
+            ResultSet rs = pst.executeQuery();
+            ArrayList<MarkerDAO> list = new ArrayList<MarkerDAO>();
+            while (rs.next()) {
+            	MarkerDAO dao = new MarkerDAO();
+                cal.setTime(rs.getTimestamp("ts"));
+                cal.add(Calendar.MILLISECOND, offsetFromUTC);
+                dao.setDate(cal.getTime());
+                dao.setLabel(rs.getString("_value"));
+                list.add(dao);
+            }            
+    		return list;
+        } catch (SQLException ex) {
+            log.error(ex.getMessage(), ex);
+        } finally {
+            try {
+                if (pst != null) {
+                    pst.close();
+                }
+                if (con != null) {
+                    con.close();
+                }
+            } catch (SQLException ex) {
+                log.error(ex.getMessage(), ex);
+            }
+        }
+        return null;	
+	}
 
 }

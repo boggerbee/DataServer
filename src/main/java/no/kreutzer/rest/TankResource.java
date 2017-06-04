@@ -2,6 +2,7 @@ package no.kreutzer.rest;
 
 import no.kreutzer.db.MySQLService;
 import no.kreutzer.domain.GraphDAO;
+import no.kreutzer.domain.MarkerDAO;
 import no.kreutzer.domain.TankDAO;
 import no.kreutzer.utils.WebsocketServer;
 import restx.annotations.GET;
@@ -57,12 +58,17 @@ public class TankResource {
     }
     @GET("/graphlevel")
     @PermitAll
-    public Iterable<GraphDAO> getGraphLevel() {
-        return mysql.getGraphableLevel();
+    public Iterable<GraphDAO> getGraphLevel(int hrs) {
+        return mysql.getGraphableLevel(hrs);
     }
     @GET("/graphflow")
     @PermitAll
-    public Iterable<GraphDAO> getGraphFlow() {
-        return mysql.getGraphableFlow();
+    public Iterable<GraphDAO> getGraphFlow(int hrs) {
+        return mysql.getGraphableFlow(hrs);
+    }
+    @GET("/graphmarkers")
+    @PermitAll
+    public Iterable<MarkerDAO> getMarkers() {
+        return mysql.getFillMarkers();
     }
 }

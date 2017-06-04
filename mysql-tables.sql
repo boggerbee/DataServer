@@ -17,7 +17,13 @@ drop table ControllerEvent;
 create table ControllerEvent (
 	ts timestamp default CURRENT_TIMESTAMP,
 	id varchar(20),
+	mode varchar(10),
+	flow bigint, 
 	_key varchar(10),
 	_value varchar(10)
 );
 alter table ControllerEvent add primary key (ts,id);
+alter table ControllerEvent add mode varchar(10);
+update ControllerEvent set mode = 'FULL';
+alter table ControllerEvent add flow bigint;
+update ControllerEvent set flow=0;
