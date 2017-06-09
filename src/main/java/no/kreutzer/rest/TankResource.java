@@ -4,7 +4,6 @@ import no.kreutzer.db.MySQLService;
 import no.kreutzer.domain.GraphDAO;
 import no.kreutzer.domain.MarkerDAO;
 import no.kreutzer.domain.TankDAO;
-import no.kreutzer.utils.WebsocketServer;
 import restx.annotations.GET;
 import restx.annotations.POST;
 import restx.annotations.RestxResource;
@@ -20,17 +19,14 @@ import org.slf4j.LoggerFactory;
 public class TankResource {
 	static final Logger log = LoggerFactory.getLogger(TankResource.class);
 	private MySQLService mysql;
-	private WebsocketServer server;
 	
-	public TankResource(@Named("MySQLService") MySQLService m, @Named("WebsocketServer") WebsocketServer s) {
+	public TankResource(@Named("MySQLService") MySQLService m) {
 		mysql = m;
-		server = s;
 	}
 
     @GET("/current")
     @PermitAll
     public TankDAO getCurrent() {
-    	server.ping();
         return mysql.getCurrent();
     }
 

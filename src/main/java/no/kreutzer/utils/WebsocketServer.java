@@ -23,9 +23,9 @@ public class WebsocketServer {
 
     private static final Logger log = LoggerFactory.getLogger(WebsocketServer.class);
 
-    private static final String GUEST_PREFIX = "Guest";
+    private static final String GUEST_PREFIX = "Client";
     private static final AtomicInteger connectionIds = new AtomicInteger(0);
-    private static final Set<WebsocketServer> connections = new CopyOnWriteArraySet<>();
+    private static final WebsocketRelay relay = new WebsocketRelay();
 
     private final String nickname;
     private Session session;
@@ -35,63 +35,39 @@ public class WebsocketServer {
         log.info("Created: "+nickname);
     }
 
-
     @OnOpen
     public void start(Session session) {
         this.session = session;
-        connections.add(this);
-        //String message = String.format("* %s %s", nickname, "has joined.");
         log.info("Websocket connected: "+session.getId());
-        //broadcast(message);
+        try {
+			session.getBasicRemote().sendText("WHOAREYOU");
+		} catch (IOException e) {
+			log.error(e.getMessage());
+		}
     }
-
 
     @OnClose
     public void end() {
-        connections.remove(this);
-        String message = String.format("* %s %s", nickname, "has disconnected.");
-        broadcast(message);
+        log.info("OnClose called");
     }
-
 
     @OnMessage
     public void incoming(String message) {
-        // Never trust the client
-        String filteredMessage = String.format("%s: %s", nickname, HTMLFilter.filter(message.toString()));
-        broadcast(filteredMessage);
-    }
-
-
-
-
-    @OnError
-    public void onError(Throwable t) throws Throwable {
-        log.error("Chat Error: " + t.toString(), t);
-    }
-
-
-    private static void broadcast(String msg) {
-        for (WebsocketServer client : connections) {
-            try {
-                synchronized (client) {
-                    client.session.getBasicRemote().sendText(msg);
-                }
-            } catch (IOException e) {
-                log.debug("Chat Error: Failed to send message to client", e);
-                connections.remove(client);
-                try {
-                    client.session.close();
-                } catch (IOException e1) {
-                    // Ignore
-                }
-                String message = String.format("* %s %s", client.nickname, "has been disconnected.");
-                broadcast(message);
-            }
+        log.info("Incoming: "+message);
+        if (message.equals("GUI")) {
+        	log.info("Is GUI client");
+        	relay.setGUI(session);
+        } else if (message.equals("RPI")) {
+        	log.info("Is RPI client");
+        	relay.setRPI(session);
+        } else {
+        	log.error("Unable to set up Relay with message:"+message);
         }
     }
 
+    @OnError
+    public void onError(Throwable t) throws Throwable {
+        log.error("OnError: " + t.toString(), t);
+    }
 
-	public void ping() {
-		broadcast("PING!");
-	}
 }
