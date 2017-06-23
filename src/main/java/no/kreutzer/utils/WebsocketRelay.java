@@ -28,7 +28,12 @@ public class WebsocketRelay {
 						log.error(e.getMessage());
 					}
 		    	} else {
-		    		log.error("GUI not connected");
+		    		log.warn("GUI not connected");
+		    		try {
+						rpi.getBasicRemote().sendText("No GUI");
+					} catch (IOException e) {
+						log.error(e.getMessage());
+					}
 		    	}
 		    }
 		});
@@ -47,7 +52,12 @@ public class WebsocketRelay {
 						log.error(e.getMessage());
 					}
 		    	} else {
-		    		log.error("RPI not connected");
+		    		log.warn("RPI not connected");
+		    		try {
+						gui.getBasicRemote().sendText("No RPI");
+					} catch (IOException e) {
+						log.error(e.getMessage());
+					}
 		    	}
 		    }
 		});

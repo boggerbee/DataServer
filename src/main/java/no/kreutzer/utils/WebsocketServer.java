@@ -1,8 +1,6 @@
 package no.kreutzer.utils;
 
 import java.io.IOException;
-import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.websocket.OnClose;
@@ -55,10 +53,20 @@ public class WebsocketServer {
     public void incoming(String message) {
         log.info("Incoming: "+message);
         if (message.equals("GUI")) {
-        	log.info("Is GUI client");
+        	log.info("Is GUI client: "+session.getId());
+			try {
+				session.getBasicRemote().sendText("ACK");
+			} catch (IOException e) {
+				log.error(e.getMessage());
+			}
         	relay.setGUI(session);
         } else if (message.equals("RPI")) {
-        	log.info("Is RPI client");
+        	log.info("Is RPI client: "+session.getId());
+			try {
+				session.getBasicRemote().sendText("ACK");
+			} catch (IOException e) {
+				log.error(e.getMessage());
+			}
         	relay.setRPI(session);
         } else {
         	log.error("Unable to set up Relay with message:"+message);

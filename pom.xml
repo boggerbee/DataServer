@@ -114,11 +114,12 @@
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
             <version>5.1.40</version>
-        </dependency>        
+        </dependency>  
 	    <dependency>
 	        <groupId>javax.websocket</groupId>
 	        <artifactId>javax.websocket-api</artifactId>
 	        <version>1.0</version>
+			<scope>provided</scope><!-- Tomcat has its own implementation -->
 	    </dependency>
     </dependencies>
     <build>
