@@ -22,8 +22,9 @@ create table ControllerEvent (
 	_key varchar(10),
 	_value varchar(10)
 );
-alter table ControllerEvent add primary key (ts,id);
+alter table ControllerEvent add primary key (ts,id,_key);
 alter table ControllerEvent add mode varchar(10);
 update ControllerEvent set mode = 'FULL';
 alter table ControllerEvent add flow bigint;
 update ControllerEvent set flow=0;
+

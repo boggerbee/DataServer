@@ -47,6 +47,7 @@ public class WebsocketServer {
     @OnClose
     public void end() {
         log.info("OnClose called");
+        relay.closeSession(session);
     }
 
     @OnMessage

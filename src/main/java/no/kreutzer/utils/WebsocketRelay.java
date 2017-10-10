@@ -63,6 +63,16 @@ public class WebsocketRelay {
 		});
 	}
 	
+	public void closeSession(Session session) {
+		if (session.equals(gui)) {
+			gui = null;
+	    	log.info("gui disconnected");
+		} else if (session.equals(rpi)) {
+			rpi = null;
+	    	log.info("rpi disconnected");
+		}
+	}
+	
 	private void removeOnMessageHandler(Session session) {
 	    for (MessageHandler handler : session.getMessageHandlers()) {
 	    	log.info("Handler: "+handler.getClass().toGenericString());
