@@ -55,19 +55,9 @@ public class WebsocketServer {
         log.info("Incoming: "+message);
         if (message.equals("GUI")) {
         	log.info("Is GUI client: "+session.getId());
-			try {
-				session.getBasicRemote().sendText("ACK");
-			} catch (IOException e) {
-				log.error(e.getMessage());
-			}
         	relay.setGUI(session);
         } else if (message.equals("RPI")) {
         	log.info("Is RPI client: "+session.getId());
-			try {
-				session.getBasicRemote().sendText("ACK");
-			} catch (IOException e) {
-				log.error(e.getMessage());
-			}
         	relay.setRPI(session);
         } else {
         	log.error("Unable to set up Relay with message:"+message);

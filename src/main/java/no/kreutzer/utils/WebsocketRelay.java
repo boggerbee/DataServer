@@ -70,7 +70,14 @@ public class WebsocketRelay {
 		} else if (session.equals(rpi)) {
 			rpi = null;
 	    	log.info("rpi disconnected");
-		}
+	    	if (gui != null) {
+	    		try {
+					gui.getBasicRemote().sendText("RPI disconnected");
+				} catch (IOException e) {
+					log.error(e.getMessage());
+				}
+	    	}		
+	    }
 	}
 	
 	private void removeOnMessageHandler(Session session) {
