@@ -127,18 +127,18 @@ public class MySQLService {
         return null;
 	}	
 	
-	public ArrayList<GraphDAO> getGraphableLevel(int hrs) {
+	public ArrayList<GraphDAO> getGraphableLevel(String id, int hrs) {
         Connection con = null;
         PreparedStatement pst = null;
         if (hrs == 0) hrs = 24;
-        
+        if (id == null) id = "Almedalen25"; 
         try {
         	DriverManager.registerDriver(new com.mysql.jdbc.Driver ());
             con = DriverManager.getConnection(URL, usr, pwd);
 
             pst = con.prepareStatement("SELECT DATE_FORMAT(MIN(ts),'%Y-%m-%d %H:%i:00') AS ds,AVG(level) AS avg_level "+
 				"FROM TankEvent WHERE ts > DATE_SUB(NOW(),INTERVAL "+hrs+" HOUR) "+
-				"GROUP BY ROUND(UNIX_TIMESTAMP(ts) / 600)"); // 600 is every 10th minute
+            	"AND id = '"+id+"' GROUP BY ROUND(UNIX_TIMESTAMP(ts) / 600)"); // 600 is every 10th minute
             ResultSet rs = pst.executeQuery();
             ArrayList<GraphDAO> list = new ArrayList<GraphDAO>();
             while (rs.next()) {
@@ -168,16 +168,18 @@ public class MySQLService {
         return null;		
 	}
 	
-	public ArrayList<GraphDAO> getGraphableFlow(int hrs) {
+	public ArrayList<GraphDAO> getGraphableFlow(String id, int hrs) {
         Connection con = null;
         PreparedStatement pst = null;
+        if (hrs == 0) hrs = 24;
+        if (id == null) id = "Almedalen25"; 
         try {
         	DriverManager.registerDriver(new com.mysql.jdbc.Driver ());
             con = DriverManager.getConnection(URL, usr, pwd);
 
             pst = con.prepareStatement("SELECT DATE_FORMAT(MIN(ts),'%Y-%m-%d %H:%i:00') AS ds,AVG(flow) AS avg_flow "+
 				"FROM TankEvent WHERE ts > DATE_SUB(NOW(),INTERVAL "+hrs+" HOUR) "+
-				"GROUP BY ROUND(UNIX_TIMESTAMP(ts) / 600)"); // 600 is every 10th minute
+				"AND id = '"+id+"' GROUP BY ROUND(UNIX_TIMESTAMP(ts) / 600)"); // 600 is every 10th minute
             
             ResultSet rs = pst.executeQuery();
             ArrayList<GraphDAO> list = new ArrayList<GraphDAO>();
@@ -283,14 +285,17 @@ public class MySQLService {
             }
         }	}
 
-	public Iterable<MarkerDAO> getFillMarkers() {
+	public Iterable<MarkerDAO> getFillMarkers(String id, int hrs) {
         Connection con = null;
         PreparedStatement pst = null;
+        if (hrs == 0) hrs = 24;
+        if (id == null) id = "Almedalen25";         
         try {
         	DriverManager.registerDriver(new com.mysql.jdbc.Driver ());
             con = DriverManager.getConnection(URL, usr, pwd);
 
-            pst = con.prepareStatement("select ts,_value from ControllerEvent where _key='tank' and ts>DATE_SUB(NOW(),INTERVAL 24 HOUR)");
+            pst = con.prepareStatement("select ts,_value from ControllerEvent where _key='tank' "+
+            "and ts>DATE_SUB(NOW(),INTERVAL "+hrs+" HOUR) and id = '"+id+"'");
             ResultSet rs = pst.executeQuery();
             ArrayList<MarkerDAO> list = new ArrayList<MarkerDAO>();
             while (rs.next()) {

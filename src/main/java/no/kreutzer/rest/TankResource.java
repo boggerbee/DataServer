@@ -54,17 +54,17 @@ public class TankResource {
     }
     @GET("/graphlevel")
     @PermitAll
-    public Iterable<GraphDAO> getGraphLevel(int hrs) {
-        return mysql.getGraphableLevel(hrs);
+    public Iterable<GraphDAO> getGraphLevel(String id, int hrs) {
+        return mysql.getGraphableLevel(id,hrs);
     }
     @GET("/graphflow")
     @PermitAll
-    public Iterable<GraphDAO> getGraphFlow(int hrs) {
-        return mysql.getGraphableFlow(hrs);
+    public Iterable<GraphDAO> getGraphFlow(String id, int hrs) {
+        return mysql.getGraphableFlow(id,hrs);
     }
     @GET("/graphmarkers")
     @PermitAll
-    public Iterable<MarkerDAO> getMarkers() {
-        return mysql.getFillMarkers();
+    public Iterable<MarkerDAO> getMarkers(String id, int hrs) {
+        return mysql.getFillMarkers(id,hrs);
     }
 }
