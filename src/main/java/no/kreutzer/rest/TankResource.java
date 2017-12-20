@@ -10,6 +10,9 @@ import restx.annotations.RestxResource;
 import restx.factory.Component;
 import restx.security.PermitAll;
 
+import java.sql.Date;
+import java.sql.Timestamp;
+
 import javax.inject.Named;
 
 import org.slf4j.Logger;
@@ -66,5 +69,20 @@ public class TankResource {
     @PermitAll
     public Iterable<MarkerDAO> getMarkers(String id, int hrs) {
         return mysql.getFillMarkers(id,hrs);
+    }
+    @GET("/level")
+    @PermitAll
+    public Iterable<GraphDAO> getLevel(String id, Timestamp s, Timestamp e) {
+        return mysql.getLevel(id,s,e);
+    }
+    @GET("/flow")
+    @PermitAll
+    public Iterable<GraphDAO> getFlow(String id, Timestamp s, Timestamp e) {
+        return mysql.getFlow(id,s,e);
+    }
+    @GET("/markers")
+    @PermitAll
+    public Iterable<MarkerDAO> getMarkers(String id, Timestamp s, Timestamp e) {
+        return mysql.getMarkers(id,s,e); 
     }
 }

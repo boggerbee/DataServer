@@ -5,9 +5,10 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
+import java.sql.Date;
 import java.util.TimeZone;
 
 import javax.inject.Named;
@@ -144,9 +145,7 @@ public class MySQLService {
             while (rs.next()) {
             	GraphDAO dao = new GraphDAO();
             	float value = (rs.getFloat("avg_level"))/100;
-                cal.setTime(rs.getTimestamp("ds"));
-                cal.add(Calendar.MILLISECOND, offsetFromUTC);
-                dao.setDate(cal.getTime());
+                dao.setDate(rs.getTimestamp("ds"));
                 dao.setValue(value);
                 list.add(dao);
             }            
@@ -168,6 +167,7 @@ public class MySQLService {
         return null;		
 	}
 	
+	
 	public ArrayList<GraphDAO> getGraphableFlow(String id, int hrs) {
         Connection con = null;
         PreparedStatement pst = null;
@@ -186,9 +186,7 @@ public class MySQLService {
             while (rs.next()) {
             	GraphDAO dao = new GraphDAO();
             	float value = rs.getFloat("avg_flow");
-                cal.setTime(rs.getTimestamp("ds"));
-                cal.add(Calendar.MILLISECOND, offsetFromUTC);
-                dao.setDate(cal.getTime());
+                dao.setDate(rs.getTimestamp("ds"));
                 dao.setValue(value);
                 list.add(dao);
             }            
@@ -231,30 +229,6 @@ public class MySQLService {
         return list;
 	}
 	
-	public static Calendar convertToGmt(Calendar cal) {
-
-	    Date date = cal.getTime();
-	    TimeZone tz = cal.getTimeZone();
-
-	    //log.debug("input calendar has date [" + date + "]");
-
-	    //Returns the number of milliseconds since January 1, 1970, 00:00:00 GMT 
-	    long msFromEpochGmt = date.getTime();
-
-	    //gives you the current offset in ms from GMT at the current date
-	    int offsetFromUTC = tz.getOffset(msFromEpochGmt);
-	    //log.debug("offset is " + offsetFromUTC);
-
-	    //create a new calendar in GMT timezone, set to this date and add the offset
-	    Calendar gmtCal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
-	    gmtCal.setTime(date);
-	    gmtCal.add(Calendar.MILLISECOND, offsetFromUTC);
-
-	    //log.debug("Created GMT cal with date [" + gmtCal.getTime() + "]");
-
-	    return gmtCal;
-	}
-
 	public void storeController(ControllerDAO dao) {
         Connection con = null;
         PreparedStatement pst = null;
@@ -300,9 +274,7 @@ public class MySQLService {
             ArrayList<MarkerDAO> list = new ArrayList<MarkerDAO>();
             while (rs.next()) {
             	MarkerDAO dao = new MarkerDAO();
-                cal.setTime(rs.getTimestamp("ts"));
-                cal.add(Calendar.MILLISECOND, offsetFromUTC);
-                dao.setDate(cal.getTime());
+                dao.setDate(rs.getTimestamp("ds"));
                 dao.setLabel(rs.getString("_value"));
                 list.add(dao);
             }            
@@ -323,5 +295,131 @@ public class MySQLService {
         }
         return null;	
 	}
+	
+    public ArrayList<GraphDAO> getLevel(String id, Timestamp start,Timestamp end) {
+        Connection con = null;
+        PreparedStatement pst = null;
+        if (id == null) id = "Almedalen25"; 
+        log.info("getLevel start time: "+start+" end time: "+end);
+        try {
+            DriverManager.registerDriver(new com.mysql.jdbc.Driver ());
+            con = DriverManager.getConnection(URL, usr, pwd);
 
+            pst = con.prepareStatement("SELECT DATE_FORMAT(MIN(ts),'%Y-%m-%d %H:%i:00') AS ds,AVG(level) AS avg_level "+
+                "FROM TankEvent WHERE ts > ? AND ts < ? "+
+                "AND id = ? GROUP BY ROUND(UNIX_TIMESTAMP(ts) / 100)"); // 600 is every 10th minute, 100 is every minute
+            pst.setTimestamp(1, start);
+            pst.setTimestamp(2, end);
+            pst.setString(3, id);
+            
+            ResultSet rs = pst.executeQuery();
+            ArrayList<GraphDAO> list = new ArrayList<GraphDAO>();
+            while (rs.next()) {
+                GraphDAO dao = new GraphDAO();
+                float value = (rs.getFloat("avg_level"))/100;
+                dao.setDate(rs.getTimestamp("ds"));
+                dao.setValue(value);
+                list.add(dao);
+            }    
+            if (list.size() != 0) {
+                log.info("First event: "+list.get(0).getDate());
+            }
+            return list;
+        } catch (SQLException ex) {
+            log.error(ex.getMessage(), ex);
+        } finally {
+            try {
+                if (pst != null) {
+                    pst.close();
+                }
+                if (con != null) {
+                    con.close();
+                }
+            } catch (SQLException ex) {
+                log.error(ex.getMessage(), ex);
+            }
+        }
+        return null;        
+    }
+    
+    public ArrayList<GraphDAO> getFlow(String id, Timestamp start,Timestamp end) {
+        Connection con = null;
+        PreparedStatement pst = null;
+        if (id == null) id = "Almedalen25"; 
+        try {
+            DriverManager.registerDriver(new com.mysql.jdbc.Driver ());
+            con = DriverManager.getConnection(URL, usr, pwd);
+
+            pst = con.prepareStatement("SELECT DATE_FORMAT(MIN(ts),'%Y-%m-%d %H:%i:00') AS ds,AVG(flow) AS avg_flow "+
+                "FROM TankEvent WHERE ts > ? AND ts < ? "+
+                "AND id = ? GROUP BY ROUND(UNIX_TIMESTAMP(ts) / 100)"); // 600 is every 10th minute, 100 is every minute
+            pst.setTimestamp(1, start);
+            pst.setTimestamp(2, end);
+            pst.setString(3, id);
+            
+            ResultSet rs = pst.executeQuery();
+            ArrayList<GraphDAO> list = new ArrayList<GraphDAO>();
+            while (rs.next()) {
+                GraphDAO dao = new GraphDAO();
+                float value = (rs.getFloat("avg_flow"))/100;
+                dao.setDate(rs.getTimestamp("ds"));
+                dao.setValue(value);
+                list.add(dao);
+            }            
+            return list;
+        } catch (SQLException ex) {
+            log.error(ex.getMessage(), ex);
+        } finally {
+            try {
+                if (pst != null) {
+                    pst.close();
+                }
+                if (con != null) {
+                    con.close();
+                }
+            } catch (SQLException ex) {
+                log.error(ex.getMessage(), ex);
+            }
+        }
+        return null;        
+    }   
+
+    public Iterable<MarkerDAO> getMarkers(String id, Timestamp start,Timestamp end) {
+        Connection con = null;
+        PreparedStatement pst = null;
+        if (id == null) id = "Almedalen25";         
+        try {
+            DriverManager.registerDriver(new com.mysql.jdbc.Driver ());
+            con = DriverManager.getConnection(URL, usr, pwd);
+
+            pst = con.prepareStatement("SELECT ts,_value FROM ControllerEvent WHERE _key='tank' AND ts > ? AND ts < ? AND id = ?");
+            pst.setTimestamp(1, start);
+            pst.setTimestamp(2, end);
+            pst.setString(3, id);
+            
+            ResultSet rs = pst.executeQuery();
+            ArrayList<MarkerDAO> list = new ArrayList<MarkerDAO>();
+            while (rs.next()) {
+                MarkerDAO dao = new MarkerDAO();
+                dao.setDate(rs.getTimestamp("ts"));
+                dao.setLabel(rs.getString("_value"));
+                list.add(dao);
+            }            
+            return list;
+        } catch (SQLException ex) {
+            log.error(ex.getMessage(), ex);
+        } finally {
+            try {
+                if (pst != null) {
+                    pst.close();
+                }
+                if (con != null) {
+                    con.close();
+                }
+            } catch (SQLException ex) {
+                log.error(ex.getMessage(), ex);
+            }
+        }
+        return null;    
+    }
 }
