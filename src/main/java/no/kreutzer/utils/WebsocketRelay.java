@@ -15,12 +15,21 @@ public class WebsocketRelay {
 	private Session gui;
 	
 	public void setRPI(Session session) {
+        if (rpi != null) {
+            try {
+                log.info("closing existing rpi connection: "+rpi.getId());
+                rpi.close();
+            } catch (IOException e) {
+                log.error(e.getMessage());
+            }
+        }
 		rpi = session;
 		removeOnMessageHandler(session);
 		rpi.addMessageHandler(new MessageHandler.Whole<String>() {
 		    @Override
 		    public void onMessage(String message) {
-		    	log.info("fromRPItoGUI called: "+message);
+		    	if (!message.startsWith("{\"flow\"")) 
+		    	        log.info("fromRPItoGUI called: "+message);
 		    	if (gui != null) {
 		    		try {
 						gui.getBasicRemote().sendText(message);
@@ -39,6 +48,14 @@ public class WebsocketRelay {
 		});
 	}
 	public void setGUI(Session session) {
+	    if (gui != null) {
+	        try {
+                log.info("closing existing gui connection: "+gui.getId());
+                gui.close();
+            } catch (IOException e) {
+                log.error(e.getMessage());
+            }
+	    }
 		gui = session;
 		removeOnMessageHandler(session);
 		gui.addMessageHandler(new MessageHandler.Whole<String>() {
