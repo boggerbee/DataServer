@@ -361,9 +361,8 @@ public class MySQLService {
             ArrayList<GraphDAO> list = new ArrayList<GraphDAO>();
             while (rs.next()) {
                 GraphDAO dao = new GraphDAO();
-                float value = (rs.getFloat("avg_flow"))/100;
                 dao.setDate(rs.getTimestamp("ds"));
-                dao.setValue(value);
+                dao.setValue(rs.getFloat("avg_flow"));
                 list.add(dao);
             }            
             return list;
