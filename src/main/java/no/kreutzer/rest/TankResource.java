@@ -4,7 +4,6 @@ import no.kreutzer.db.MySQLService;
 import no.kreutzer.domain.GraphDAO;
 import no.kreutzer.domain.MarkerDAO;
 import no.kreutzer.domain.TankDAO;
-import no.kreutzer.telldus.CommandStatus;
 import no.kreutzer.telldus.TelldusService;
 import restx.annotations.GET;
 import restx.annotations.POST;
@@ -13,7 +12,6 @@ import restx.factory.Component;
 import restx.security.PermitAll;
 
 import java.io.IOException;
-import java.sql.Date;
 import java.sql.Timestamp;
 
 import javax.inject.Named;
