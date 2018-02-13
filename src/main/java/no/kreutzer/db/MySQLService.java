@@ -6,6 +6,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.sql.Date;
@@ -296,33 +298,44 @@ public class MySQLService {
         return null;	
 	}
 	
+	/**
+	 * Return the modulus count that will return 100 rows
+	 * Assume one row per minute (minutes/100) 
+	 */
+	protected long getModCount(LocalDateTime start,LocalDateTime end) {
+	    long mod = Duration.between(start,end).getSeconds()/6000;
+	    return (mod>1?mod:1);
+	}
+	
     public ArrayList<GraphDAO> getLevel(String id, Timestamp start,Timestamp end) {
         Connection con = null;
         PreparedStatement pst = null;
         if (id == null) id = "Almedalen25"; 
-        log.info("getLevel start time: "+start+" end time: "+end);
+        long mod = getModCount(start.toLocalDateTime(), end.toLocalDateTime());
+        log.info("getLevel start time: "+start+" end time: "+end+" -> mod:"+mod);
+        
         try {
             DriverManager.registerDriver(new com.mysql.jdbc.Driver ());
             con = DriverManager.getConnection(URL, usr, pwd);
-
-            pst = con.prepareStatement("SELECT DATE_FORMAT(MIN(ts),'%Y-%m-%d %H:%i:00') AS ds,AVG(level) AS avg_level "+
-                "FROM TankEvent WHERE ts > ? AND ts < ? "+
-                "AND id = ? GROUP BY ROUND(UNIX_TIMESTAMP(ts) / 100)"); // 600 is every 10th minute, 100 is every minute
+                
+            pst = con.prepareStatement("SELECT * FROM (SELECT @row := @row +1 AS rownum, ts,level FROM (SELECT @row :=0) r, TankEvent "+
+                    "WHERE ts > ? AND ts < ? AND id = ?) ranked "+(mod>1?"WHERE rownum % ? = 1":""));
             pst.setTimestamp(1, start);
             pst.setTimestamp(2, end);
             pst.setString(3, id);
+            if (mod > 1) pst.setLong(4, mod);
             
             ResultSet rs = pst.executeQuery();
             ArrayList<GraphDAO> list = new ArrayList<GraphDAO>();
             while (rs.next()) {
                 GraphDAO dao = new GraphDAO();
-                float value = (rs.getFloat("avg_level"))/100;
-                dao.setDate(rs.getTimestamp("ds"));
+                float value = (rs.getFloat("level"))/100;
+                dao.setDate(rs.getTimestamp("ts"));
                 dao.setValue(value);
                 list.add(dao);
             }    
             if (list.size() != 0) {
-                log.info("First event: "+list.get(0).getDate());
+                log.info("First event: "+list.get(0).getDate()+" size:"+list.size());
             }
             return list;
         } catch (SQLException ex) {
@@ -346,23 +359,25 @@ public class MySQLService {
         Connection con = null;
         PreparedStatement pst = null;
         if (id == null) id = "Almedalen25"; 
+        long mod = getModCount(start.toLocalDateTime(), end.toLocalDateTime());
+        
         try {
             DriverManager.registerDriver(new com.mysql.jdbc.Driver ());
             con = DriverManager.getConnection(URL, usr, pwd);
 
-            pst = con.prepareStatement("SELECT DATE_FORMAT(MIN(ts),'%Y-%m-%d %H:%i:00') AS ds,AVG(flow) AS avg_flow "+
-                "FROM TankEvent WHERE ts > ? AND ts < ? "+
-                "AND id = ? GROUP BY ROUND(UNIX_TIMESTAMP(ts) / 100)"); // 600 is every 10th minute, 100 is every minute
+            pst = con.prepareStatement("SELECT * FROM (SELECT @row := @row +1 AS rownum, ts,flow FROM (SELECT @row :=0) r, TankEvent "+
+                    "WHERE ts > ? AND ts < ? AND id = ?) ranked "+(mod>1?"WHERE rownum % ? = 1":""));
             pst.setTimestamp(1, start);
             pst.setTimestamp(2, end);
             pst.setString(3, id);
+            if (mod > 1) pst.setLong(4, mod);
             
             ResultSet rs = pst.executeQuery();
             ArrayList<GraphDAO> list = new ArrayList<GraphDAO>();
             while (rs.next()) {
                 GraphDAO dao = new GraphDAO();
-                dao.setDate(rs.getTimestamp("ds"));
-                dao.setValue(rs.getFloat("avg_flow"));
+                dao.setDate(rs.getTimestamp("ts"));
+                dao.setValue(rs.getFloat("flow"));
                 list.add(dao);
             }            
             return list;
